@@ -1,0 +1,41 @@
+global:
+  resolve_timeout: 5m
+
+# The root route on which each alert enters the route tree
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'default-receiver'
+  
+  # Child routes for routing specific severities or alerts
+  routes:
+    - match:
+        severity: critical
+      receiver: 'pagerduty-placeholder'
+
+receivers:
+  # A default receiver that handles any unmatched alerts via email
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'admin-alerts@yourcompany.com'
+        from: 'alertmanager@yourcompany.com'
+        smarthost: 'smtp.mailgun.org:587'
+        auth_username: 'smtp_username_placeholder'
+        auth_password: 'smtp_password_placeholder'
+        require_tls: true
+
+  # A critical alert receiver matching PagerDuty
+  - name: 'pagerduty-placeholder'
+    webhook_configs:
+      - url: 'https://webhook.site/placeholder-pagerduty-integration-uuid'
+        send_resolved: true
+
+# Influx of inhibiting rules to suppress warnings if critical alerts are firing
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev', 'instance']

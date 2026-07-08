@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Monitoring - Control Center</title>
+    <meta name="description" content="Real-time Cloud Infrastructure Monitoring Control Center built with Prometheus, Grafana, and Terraform">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --bg-base: #f8f9fb;
+            --bg-white: #ffffff;
+            --bg-subtle: #f1f3f9;
+            --border: #e2e6ef;
+            --border-light: #eef0f6;
+            --primary: #4f46e5;
+            --primary-light: #eef2ff;
+            --primary-hover: #4338ca;
+            --secondary: #059669;
+            --secondary-light: #ecfdf5;
+            --accent: #d97706;
+            --accent-light: #fffbeb;
+            --error: #dc2626;
+            --error-light: #fef2f2;
+            --text-dark: #111827;
+            --text-body: #374151;
+            --text-muted: #6b7280;
+            --text-light: #9ca3af;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-body);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            padding: 1.5rem 2rem;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .logo-section h1 {
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-section h1 i { color: var(--primary); font-size: 1.4rem; }
+
+        .logo-section p {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-top: 0.15rem;
+            font-weight: 400;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.85rem;
+            border-radius: 50px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--error);
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.online { background: var(--secondary); box-shadow: 0 0 6px rgba(5, 150, 105, 0.4); }
+
+        .status-text { font-weight: 600; font-size: 0.78rem; color: var(--text-body); }
+
+        .icon-btn {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 0.95rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .icon-btn:hover { border-color: var(--primary); color: var(--primary); transform: rotate(90deg); }
+
+        /* GRID */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+        /* PANEL */
+        .panel {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .panel:hover { box-shadow: var(--shadow-md); }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.65rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .panel-header i { color: var(--primary); font-size: 1rem; }
+
+        .panel-header h2 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            letter-spacing: -0.2px;
+        }
+
+        .panel-desc {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        /* TOPOLOGY SVG */
+        .topology-svg {
+            width: 100%;
+            height: auto;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            padding: 0.5rem;
+        }
+
+        .topo-node { cursor: pointer; transition: filter 0.2s ease; }
+        .topo-node:hover { filter: drop-shadow(0 2px 6px rgba(79,70,229,0.25)); }
+
+        /* ACTION BUTTONS */
+        .btn-stack { display: flex; flex-direction: column; gap: 0.6rem; }
+
+        .action-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-white);
+            color: var(--text-body);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .action-btn:active { transform: translateY(0); }
+
+        .action-btn .btn-left { display: flex; align-items: center; gap: 0.45rem; }
+        .action-btn .btn-left i { font-size: 1rem; }
+
+        .btn-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 500;
+            padding: 0.12rem 0.4rem;
+            border-radius: 4px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-green:hover { border-color: var(--secondary); background: var(--secondary-light); }
+        .btn-amber:hover { border-color: var(--accent); background: var(--accent-light); }
+        .btn-red:hover { border-color: var(--error); background: var(--error-light); }
+
+        /* METRIC CARDS */
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .metric-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .metric-card .mc-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-card .mc-label i { font-size: 0.75rem; }
+
+        .metric-card .mc-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+        }
+
+        .metric-card .mc-value.val-green { color: var(--secondary); }
+        .metric-card .mc-value.val-amber { color: var(--accent); }
+        .metric-card .mc-value.val-red { color: var(--error); }
+
+        /* BAR CHART */
+        .chart-section {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .chart-section h3 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .chart-section h3 i { color: var(--primary); font-size: 0.9rem; }
+
+        .bar-row { margin-bottom: 0.65rem; }
+        .bar-row:last-child { margin-bottom: 0; }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.2rem;
+            font-weight: 500;
+        }
+
+        .bar-label .bar-count { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text-dark); }
+
+        .bar-track {
+            background: #e5e7eb;
+            height: 8px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 8px;
+            transition: width 0.4s ease;
+        }
+
+        .bar-fill.fill-primary { background: linear-gradient(90deg, var(--primary), #818cf8); }
+        .bar-fill.fill-amber { background: linear-gradient(90deg, var(--accent), #fbbf24); }
+        .bar-fill.fill-red { background: linear-gradient(90deg, var(--error), #f87171); }
+
+        /* TERMINAL */
+        .terminal-section {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem;
+        }
+
+        .terminal-section h3 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .terminal-section h3 i { color: var(--text-muted); }
+
+        .terminal-box {
+            background: #1e1e2e;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #a6e3a1;
+            height: 150px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .terminal-box::-webkit-scrollbar { width: 4px; }
+        .terminal-box::-webkit-scrollbar-track { background: transparent; }
+        .terminal-box::-webkit-scrollbar-thumb { background: #45475a; border-radius: 4px; }
+
+        /* ALERTS */
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 1.25rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .alert-header i { color: var(--error); font-size: 0.9rem; }
+        .alert-header h3 { font-size: 0.82rem; font-weight: 700; color: var(--text-dark); }
+
+        .alert-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--secondary);
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .alert-dot.firing {
+            background: var(--error);
+            box-shadow: 0 0 6px var(--error);
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .alert-info h4 { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); }
+        .alert-info p { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.05rem; }
+
+        .alert-info .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            font-weight: 500;
+            padding: 0.05rem 0.25rem;
+            border-radius: 3px;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+            color: var(--text-light);
+            font-size: 0.72rem;
+        }
+
+        footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        footer a:hover { text-decoration: underline; }
+
+        /* TOAST */
+        .toast-box {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 0.4rem;
+        }
+
+        .toast-item {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.55rem 0.85rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.25s ease;
+        }
+
+        .toast-item i { font-size: 0.95rem; }
+
+        @keyframes toastIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* RESPONSIVE TWEAKS */
+        @media (max-width: 1200px) {
+            .metric-row { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-section">
+        <h1><i class="bi bi-activity"></i> DevOps Control Center</h1>
+        <p>Real-time Cloud Infrastructure Monitoring with Prometheus and Grafana</p>
+    </div>
+    <div class="header-right">
+        <button class="icon-btn" onclick="fetchMetrics()" title="Refresh Metrics"><i class="bi bi-arrow-clockwise"></i></button>
+        <div class="status-badge">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="statusText" class="status-text">Connecting...</span>
+        </div>
+    </div>
+</header>
+
+<div class="dashboard-grid">
+
+    <!-- LEFT: Topology + Controls -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="panel">
+            <div class="panel-header">
+                <i class="bi bi-diagram-3-fill"></i>
+                <h2>Infrastructure Topology</h2>
+            </div>
+            <svg class="topology-svg" viewBox="0 0 250 340">
+                <rect x="5" y="5" width="240" height="330" rx="10" fill="none" stroke="#e2e6ef" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="15" y="22" fill="#9ca3af" font-size="8" font-weight="700" letter-spacing="0.5" font-family="Inter">AWS VPC (ap-south-1)</text>
+                <rect x="15" y="35" width="220" height="290" rx="6" fill="none" stroke="#c7d2fe" stroke-width="1"/>
+                <text x="22" y="50" fill="#818cf8" font-size="7" font-weight="700" letter-spacing="0.5" font-family="Inter">PUBLIC SUBNET 10.0.1.0/24</text>
+                <rect x="25" y="60" width="200" height="250" rx="4" fill="#f8f9fb" stroke="#e2e6ef" stroke-width="1"/>
+                <text x="32" y="75" fill="#9ca3af" font-size="7" font-weight="600" font-family="Inter">EC2 t3.micro (Ubuntu 22.04)</text>
+                <line x1="125" y1="125" x2="125" y2="200" stroke="#e2e6ef" stroke-width="1"/>
+                <line x1="70" y1="125" x2="180" y2="125" stroke="#e2e6ef" stroke-width="1"/>
+                <line x1="70" y1="200" x2="180" y2="200" stroke="#e2e6ef" stroke-width="1"/>
+                <g class="topo-node">
+                    <rect x="35" y="90" width="75" height="35" rx="4" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.2"/>
+                    <text x="72" y="108" fill="#4f46e5" font-size="8" font-weight="700" text-anchor="middle" font-family="Inter">Prometheus</text>
+                    <text x="72" y="118" fill="#9ca3af" font-size="7" text-anchor="middle" font-family="JetBrains Mono">:9090</text>
+                </g>
+                <g class="topo-node">
+                    <rect x="140" y="90" width="75" height="35" rx="4" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.2"/>
+                    <text x="177" y="108" fill="#4f46e5" font-size="8" font-weight="700" text-anchor="middle" font-family="Inter">Grafana</text>
+                    <text x="177" y="118" fill="#9ca3af" font-size="7" text-anchor="middle" font-family="JetBrains Mono">:3000</text>
+                </g>
+                <g class="topo-node">
+                    <rect x="35" y="165" width="75" height="35" rx="4" fill="#f8f9fb" stroke="#e2e6ef" stroke-width="1"/>
+                    <text x="72" y="183" fill="#374151" font-size="7" font-weight="600" text-anchor="middle" font-family="Inter">node_exporter</text>
+                    <text x="72" y="193" fill="#9ca3af" font-size="7" text-anchor="middle" font-family="JetBrains Mono">:9100</text>
+                </g>
+                <g class="topo-node">
+                    <rect x="140" y="165" width="75" height="35" rx="4" fill="#f8f9fb" stroke="#e2e6ef" stroke-width="1"/>
+                    <text x="177" y="183" fill="#374151" font-size="8" font-weight="600" text-anchor="middle" font-family="Inter">cAdvisor</text>
+                    <text x="177" y="193" fill="#9ca3af" font-size="7" text-anchor="middle" font-family="JetBrains Mono">:8080</text>
+                </g>
+                <line x1="125" y1="200" x2="125" y2="245" stroke="#e2e6ef" stroke-width="1"/>
+                <g class="topo-node">
+                    <rect x="60" y="245" width="130" height="40" rx="4" fill="#ecfdf5" stroke="#059669" stroke-width="1.2"/>
+                    <text x="125" y="265" fill="#059669" font-size="8" font-weight="700" text-anchor="middle" font-family="Inter">Flask Demo App</text>
+                    <text x="125" y="278" fill="#9ca3af" font-size="7" text-anchor="middle" font-family="JetBrains Mono">:8000 (instrumented)</text>
+                </g>
+            </svg>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <i class="bi bi-gear-fill"></i>
+                <h2>Load Generator</h2>
+            </div>
+            <p class="panel-desc">Send real HTTP requests to the Flask backend and watch metrics update live.</p>
+            <div class="btn-stack">
+                <button class="action-btn btn-green" onclick="triggerReq('/')">
+                    <span class="btn-left"><i class="bi bi-house-door-fill" style="color:var(--secondary)"></i> Root Endpoint</span>
+                    <span class="btn-tag" style="color:var(--secondary)">GET /</span>
+                </button>
+                <button class="action-btn btn-amber" onclick="triggerReq('/slow')">
+                    <span class="btn-left"><i class="bi bi-hourglass-split" style="color:var(--accent)"></i> Slow Endpoint</span>
+                    <span class="btn-tag" style="color:var(--accent)">GET /slow</span>
+                </button>
+                <button class="action-btn btn-red" onclick="triggerReq('/error')">
+                    <span class="btn-left"><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Error Simulator</span>
+                    <span class="btn-tag" style="color:var(--error)">GET /error</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CENTER: Metrics -->
+    <div class="panel">
+        <div class="panel-header">
+            <i class="bi bi-graph-up-arrow"></i>
+            <h2>Live Telemetry Metrics</h2>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric-card">
+                <div class="mc-label"><i class="bi bi-cursor-fill"></i> Hits</div>
+                <div id="mTotal" class="mc-value">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="mc-label"><i class="bi bi-stopwatch-fill"></i> Avg Latency</div>
+                <div id="mLatency" class="mc-value val-green">0.000s</div>
+            </div>
+            <div class="metric-card">
+                <div class="mc-label"><i class="bi bi-check-circle-fill"></i> Success</div>
+                <div id="mSuccess" class="mc-value val-green">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="mc-label"><i class="bi bi-x-circle-fill"></i> Errors</div>
+                <div id="mErrors" class="mc-value val-red">0</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h3><i class="bi bi-bar-chart-fill"></i> Requests by Endpoint</h3>
+            <div class="bar-row">
+                <div class="bar-label"><span>/ (Root)</span><span class="bar-count" id="cHome">0</span></div>
+                <div class="bar-track"><div id="bHome" class="bar-fill fill-primary"></div></div>
+            </div>
+            <div class="bar-row">
+                <div class="bar-label"><span>/slow (Latency Test)</span><span class="bar-count" id="cSlow">0</span></div>
+                <div class="bar-track"><div id="bSlow" class="bar-fill fill-amber"></div></div>
+            </div>
+            <div class="bar-row">
+                <div class="bar-label"><span>/error (Failure Sim)</span><span class="bar-count" id="cError">0</span></div>
+                <div class="bar-track"><div id="bError" class="bar-fill fill-red"></div></div>
+            </div>
+        </div>
+
+        <div class="terminal-section">
+            <h3><i class="bi bi-terminal-fill"></i> Prometheus Metrics Feed</h3>
+            <div id="term" class="terminal-box">$ waiting for telemetry data...</div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Alerts -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="panel">
+            <div class="panel-header">
+                <i class="bi bi-bell-fill"></i>
+                <h2>Alerting Rules</h2>
+            </div>
+            <p class="panel-desc">Prometheus alerting rules monitor infrastructure health and fire when thresholds are breached.</p>
+
+            <div class="alert-row">
+                <div id="aDot1" class="alert-dot"></div>
+                <div class="alert-info">
+                    <h4>InstanceDown</h4>
+                    <p>Target unreachable <span class="tag">for: 1m</span></p>
+                </div>
+            </div>
+            <div class="alert-row">
+                <div id="aDot2" class="alert-dot"></div>
+                <div class="alert-info">
+                    <h4>HostHighCpuLoad</h4>
+                    <p>CPU usage above 80% <span class="tag">for: 5m</span></p>
+                </div>
+            </div>
+            <div class="alert-row">
+                <div id="aDot3" class="alert-dot"></div>
+                <div class="alert-info">
+                    <h4>HostHighMemory</h4>
+                    <p>Memory usage above 85% <span class="tag">for: 5m</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <i class="bi bi-stack"></i>
+                <h2>Stack Components</h2>
+            </div>
+            <div id="stackList" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <i class="bi bi-clock-history"></i>
+                <h2>Request Log</h2>
+            </div>
+            <div id="reqLog" style="max-height: 200px; overflow-y: auto; font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; line-height: 1.7;">
+                Waiting for activity...
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    Built with Terraform, Docker Compose, Prometheus, Grafana, Flask, and Bootstrap Icons
+    &mdash; <a href="https://github.com" target="_blank">View Source on GitHub</a>
+</footer>
+
+<div id="toasts" class="toast-box"></div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let reqLogEl = document.getElementById("reqLog");
+let logEntries = [];
+
+const stackComponents = [
+    { name: "Prometheus", port: "9090", icon: "bi-database-fill", color: "var(--primary)" },
+    { name: "Grafana", port: "3000", icon: "bi-speedometer2", color: "var(--primary)" },
+    { name: "Alertmanager", port: "9093", icon: "bi-bell-fill", color: "var(--accent)" },
+    { name: "Node Exporter", port: "9100", icon: "bi-cpu-fill", color: "var(--text-muted)" },
+    { name: "cAdvisor", port: "8080", icon: "bi-box-fill", color: "var(--text-muted)" },
+    { name: "Flask App", port: "8000", icon: "bi-code-slash", color: "var(--secondary)" },
+];
+
+function renderStack() {
+    const el = document.getElementById("stackList");
+    el.innerHTML = stackComponents.map(s => `
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;background:var(--bg-subtle);border:1px solid var(--border-light);border-radius:6px;">
+            <i class="bi ${s.icon}" style="color:${s.color};font-size:0.9rem;"></i>
+            <span style="font-size:0.78rem;font-weight:600;color:var(--text-dark);flex:1;">${s.name}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-muted);">:${s.port}</span>
+        </div>
+    `).join('');
+}
+
+function toast(msg, icon, color) {
+    const c = document.getElementById("toasts");
+    const t = document.createElement("div");
+    t.className = "toast-item";
+    t.innerHTML = `<i class="bi ${icon}" style="color:${color}"></i> ${msg}`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+function addLog(text) {
+    const now = new Date().toLocaleTimeString();
+    logEntries.unshift(`[${now}] ${text}`);
+    if (logEntries.length > 30) logEntries.pop();
+    reqLogEl.innerHTML = logEntries.join('<br>');
+}
+
+async function checkStatus() {
+    try {
+        const r = await fetch(`${API}/`);
+        if (r.ok) {
+            document.getElementById("statusDot").className = "status-dot online";
+            document.getElementById("statusText").textContent = "Stack Online";
+            document.getElementById("aDot1").className = "alert-dot";
+        } else throw new Error();
+    } catch {
+        document.getElementById("statusDot").className = "status-dot";
+        document.getElementById("statusText").textContent = "Offline";
+        document.getElementById("aDot1").className = "alert-dot firing";
+    }
+}
+
+async function triggerReq(ep) {
+    try {
+        const t0 = performance.now();
+        const r = await fetch(`${API}${ep}`);
+        const dt = ((performance.now() - t0) / 1000).toFixed(3);
+        const sc = r.status;
+
+        if (sc >= 500) {
+            toast(`${sc} Error from ${ep} (${dt}s)`, "bi-x-circle-fill", "var(--error)");
+            addLog(`ERROR ${sc} ${ep} ${dt}s`);
+        } else {
+            toast(`${sc} OK from ${ep} (${dt}s)`, "bi-check-circle-fill", "var(--secondary)");
+            addLog(`OK ${sc} ${ep} ${dt}s`);
+        }
+        fetchMetrics();
+    } catch (e) {
+        toast("Connection failed", "bi-wifi-off", "var(--error)");
+        addLog(`FAIL ${ep} - ${e.message}`);
+    }
+}
+
+async function fetchMetrics() {
+    try {
+        const r = await fetch(`${API}/metrics`);
+        if (!r.ok) return;
+        const txt = await r.text();
+
+        document.getElementById("term").textContent =
+            txt.split('\n').filter(l => !l.startsWith('#') && l.trim()).slice(0, 18).join('\n');
+
+        let hc = 0, sc = 0, ec = 0, sLat = 0, cLat = 0;
+
+        txt.split('\n').forEach(l => {
+            if (l.includes('http_requests_total')) {
+                const m = l.match(/\} (\d+)/);
+                const v = m ? parseInt(m[1]) : 0;
+                if (l.includes('endpoint="home"')) hc = v;
+                if (l.includes('endpoint="slow"')) sc = v;
+                if (l.includes('endpoint="error"')) ec = v;
+            }
+            if (l.includes('http_request_duration_seconds_sum')) {
+                const m = l.match(/\} ([\d.]+)/);
+                if (m) sLat += parseFloat(m[1]);
+            }
+            if (l.includes('http_request_duration_seconds_count')) {
+                const m = l.match(/\} (\d+)/);
+                if (m) cLat += parseInt(m[1]);
+            }
+        });
+
+        const total = hc + sc + ec;
+        const avg = cLat > 0 ? sLat / cLat : 0;
+
+        document.getElementById("mTotal").textContent = total;
+        document.getElementById("mLatency").textContent = avg.toFixed(3) + "s";
+        document.getElementById("mSuccess").textContent = hc + sc;
+        document.getElementById("mErrors").textContent = ec;
+
+        document.getElementById("cHome").textContent = hc;
+        document.getElementById("cSlow").textContent = sc;
+        document.getElementById("cError").textContent = ec;
+
+        const mx = Math.max(hc, sc, ec, 1);
+        document.getElementById("bHome").style.width = `${(hc / mx) * 100}%`;
+        document.getElementById("bSlow").style.width = `${(sc / mx) * 100}%`;
+        document.getElementById("bError").style.width = `${(ec / mx) * 100}%`;
+
+        document.getElementById("aDot2").className = sc > 20 ? "alert-dot firing" : "alert-dot";
+        document.getElementById("aDot3").className = total > 50 ? "alert-dot firing" : "alert-dot";
+
+    } catch (e) { /* silent */ }
+}
+
+renderStack();
+checkStatus();
+fetchMetrics();
+setInterval(checkStatus, 3000);
+setInterval(fetchMetrics, 1500);
+</script>
+
+</body>
+</html>

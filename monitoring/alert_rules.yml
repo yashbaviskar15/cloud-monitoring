@@ -1,0 +1,32 @@
+groups:
+  - name: infrastructure_alerts
+    rules:
+      # Alert for instance or service being down for more than 1 minute
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "Target {{ $labels.instance }} of job {{ $labels.job }} has been unreachable for more than 1 minute."
+
+      # Alert for high host CPU load (>80% for 5 minutes)
+      - alert: HostHighCpuLoad
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host High CPU Load (instance {{ $labels.instance }})"
+          description: "CPU load is >80% for the last 5 minutes. Current value: {{ $value | printf \"%.2f\" }}%"
+
+      # Alert for high host Memory usage (>85% for 5 minutes)
+      - alert: HostHighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host High Memory Usage (instance {{ $labels.instance }})"
+          description: "Memory usage is >85% for the last 5 minutes. Current value: {{ $value | printf \"%.2f\" }}%"
