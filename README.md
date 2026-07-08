@@ -8,14 +8,14 @@ A portfolio-ready, fully-automated DevOps monitoring stack that provisions AWS i
 
 ```mermaid
 graph TD
-    subgraph Local Machine
+    subgraph "Local Machine"
         TF[Terraform CLI]
         DC[Docker Compose]
     end
 
-    subgraph AWS Cloud (ap-south-1)
-        subgraph VPC (10.0.0.0/16)
-            subgraph Public Subnet (10.0.1.0/24)
+    subgraph "AWS Cloud (ap-south-1)"
+        subgraph "VPC (10.0.0.0/16)"
+            subgraph "Public Subnet (10.0.1.0/24)"
                 EIP[Elastic IP] <--> EC2[EC2 Instance: Ubuntu 22.04]
             end
             
@@ -25,7 +25,7 @@ graph TD
         end
     end
 
-    subgraph EC2 Containerized Stack (Docker Compose Network)
+    subgraph "EC2 Containerized Stack (Docker Compose Network)"
         App[Flask Demo App:8000]
         NE[Node Exporter:9100]
         CAD[cAdvisor:8080]
