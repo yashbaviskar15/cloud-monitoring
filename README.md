@@ -16,7 +16,8 @@ graph TD
     subgraph "AWS Cloud (ap-south-1)"
         subgraph "VPC (10.0.0.0/16)"
             subgraph "Public Subnet (10.0.1.0/24)"
-                EIP[Elastic IP] <--> EC2[EC2 Instance: Ubuntu 22.04]
+                EIP[Elastic IP]
+                EC2[EC2 Instance: Ubuntu 22.04]
             end
             
             SG[Security Group]
@@ -47,13 +48,14 @@ graph TD
     end
 
     %% Network flows
-    TF -->|Provisions| VPC
+    TF -->|Provisions| EC2
     SG -->|Allows Ports 22, 3000, 9090, 8000| EC2
-    IGW <--> RT <--> Public Subnet
+    IGW <--> RT <--> EIP
+    EIP <--> EC2
     
     classDef aws fill:#FF9900,stroke:#333,stroke-width:1px,color:#fff;
     classDef monitor fill:#1F4E79,stroke:#333,stroke-width:1px,color:#fff;
-    class VPC,PublicSubnet,EC2,EIP,SG,IGW,RT aws;
+    class EC2,EIP,SG,IGW,RT aws;
     class App,NE,CAD,Prom,AM,Graf monitor;
 ```
 
