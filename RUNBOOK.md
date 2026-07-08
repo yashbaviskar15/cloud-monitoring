@@ -29,11 +29,13 @@ graph LR
    ```bash
    cd terraform
    ```
+
 2. Create or switch to the environment workspace:
    ```bash
    # Switch to dev
    terraform workspace select dev || terraform workspace new dev
    ```
+
 3. Create your custom environment configurations (e.g. `dev.tfvars`, `prod.tfvars`):
    * **`dev.tfvars`**:
      ```hcl
@@ -49,10 +51,12 @@ graph LR
      project_name   = "devops-monitoring-prod"
      allowed_cidr   = "198.51.100.12/32" # Restricted to corporate office/VPN IP
      ```
+
 4. Run plan using the target environment variable file:
    ```bash
    terraform plan -var-file="dev.tfvars"
    ```
+
 5. Apply the configuration:
    ```bash
    terraform apply -var-file="dev.tfvars" -auto-approve
@@ -74,14 +78,17 @@ To avoid unwanted AWS billing charges, clean up your infrastructure safely when 
    cd terraform
    terraform workspace select dev
    ```
+
 2. Execute a destroy plan preview:
    ```bash
    terraform plan -destroy -var-file="dev.tfvars"
    ```
+
 3. Apply the destroy command:
    ```bash
    terraform destroy -var-file="dev.tfvars" -auto-approve
    ```
+
 4. Clean up local state backups and dynamic keys (Optional):
    ```bash
    rm -f monitoring-key.pem terraform.tfstate*
