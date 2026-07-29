@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: devops-monitoring-app
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r demo-app/requirements.txt
+    startCommand: gunicorn --chdir demo-app app:app
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12

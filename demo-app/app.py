@@ -6,8 +6,15 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 
 app = Flask(__name__)
 
-# Path to the sibling dashboard directory
-DASHBOARD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dashboard')
+# Path to the dashboard directory (checks local ./dashboard or sibling ../dashboard)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCAL_DASHBOARD_DIR = os.path.join(BASE_DIR, 'dashboard')
+SIBLING_DASHBOARD_DIR = os.path.join(os.path.dirname(BASE_DIR), 'dashboard')
+
+if os.path.exists(LOCAL_DASHBOARD_DIR):
+    DASHBOARD_DIR = LOCAL_DASHBOARD_DIR
+else:
+    DASHBOARD_DIR = SIBLING_DASHBOARD_DIR
 
 # Custom application-level metrics
 HTTP_REQUESTS_TOTAL = Counter(
