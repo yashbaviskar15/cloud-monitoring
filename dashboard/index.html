@@ -1489,11 +1489,9 @@ async function fetchMetrics() {
         if (!r.ok) return;
         const txt = await r.text();
 
-        const lines = txt.split('
-');
+        const lines = txt.split(/\r?\n/);
         const metricLines = lines.filter(l => !l.startsWith('#') && l.trim());
-        document.getElementById("term").textContent = metricLines.slice(0, 25).join('
-') || '$ waiting for telemetry data...';
+        document.getElementById("term").textContent = metricLines.slice(0, 25).join('\n') || '$ waiting for telemetry data...';
 
         let hc = 0, sc = 0, ec = 0, sLat = 0, cLat = 0;
 
