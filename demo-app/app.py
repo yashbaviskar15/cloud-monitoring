@@ -30,7 +30,13 @@ HTTP_REQUEST_DURATION_SECONDS = Histogram(
 )
 
 @app.before_request
-def start_timer():
+def handle_preflight_and_timer():
+    if request.method == "OPTIONS":
+        res = app.make_default_options_response()
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        res.headers.add("Access-Control-Allow-Headers", "*")
+        res.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+        return res
     request.start_time = time.time()
 
 @app.after_request
@@ -39,8 +45,8 @@ def record_metrics(response):
     endpoint = request.endpoint or request.path
     
     # Exclude /metrics and /dashboard from our custom HTTP metrics to avoid scraping noise
-    if endpoint not in ('metrics', 'dashboard'):
-        latency = time.time() - request.start_time
+    if endpoint not in ('metrics', 'dashboard', 'health') and not request.path.startswith('/dashboard'):
+        latency = time.time() - getattr(request, 'start_time', time.time())
         HTTP_REQUESTS_TOTAL.labels(
             method=request.method,
             endpoint=endpoint,
@@ -53,9 +59,9 @@ def record_metrics(response):
         ).observe(latency)
         
     # Enable CORS headers for the frontend UI dashboard
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("Access-Control-Allow-Headers", "*")
-    response.headers.add("Access-Control-Allow-Methods", "*")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
     return response
 
 @app.route('/')
@@ -86,6 +92,14 @@ def error():
         "status": "error",
         "message": "Internal Server Error simulated!"
     }), 500
+
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "healthy",
+        "service": "devops-monitoring-stack",
+        "timestamp": time.time()
+    })
 
 @app.route('/metrics')
 def metrics():

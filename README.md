@@ -4,6 +4,14 @@ A portfolio-ready, fully-automated DevOps monitoring stack that provisions AWS i
 
 ---
 
+## 🚀 Live Demos
+
+* 🖥️ **DevOps Control Center Dashboard**: [https://dev-cloud-monitoring.vercel.app/](https://dev-cloud-monitoring.vercel.app/)
+* ⚡ **Instrumented Demo Application**: [https://cloud-monitoring-app.vercel.app/](https://cloud-monitoring-app.vercel.app/)
+* 📊 **Prometheus Raw Metrics Feed**: [https://cloud-monitoring-app.vercel.app/metrics](https://cloud-monitoring-app.vercel.app/metrics)
+
+---
+
 ## Architecture Overview
 
 ```mermaid

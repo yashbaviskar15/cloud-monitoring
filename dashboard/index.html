@@ -112,6 +112,162 @@
         }
 
         .icon-btn:hover { border-color: var(--primary); color: var(--primary); transform: rotate(90deg); }
+        .icon-btn.active-state { background: var(--primary-light); color: var(--primary); border-color: var(--primary); transform: none; }
+
+        /* API SELECTOR */
+        .api-selector-container {
+            position: relative;
+        }
+
+        .api-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.85rem;
+            border-radius: 50px;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-body);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .api-pill:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .api-pill i {
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .api-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 320px;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 0.75rem;
+            z-index: 500;
+            display: none;
+            flex-direction: column;
+            gap: 0.45rem;
+            animation: toastIn 0.2s ease;
+        }
+
+        .api-dropdown.show {
+            display: flex;
+        }
+
+        .api-dropdown-header {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .api-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0.65rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .api-option-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .api-option-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .api-option-btn i {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .api-option-btn .opt-text {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .api-option-btn .opt-text strong {
+            font-size: 0.78rem;
+            color: var(--text-dark);
+        }
+
+        .api-option-btn .opt-text span {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .api-custom-row {
+            display: flex;
+            gap: 0.35rem;
+            margin-top: 0.25rem;
+            padding-top: 0.4rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .api-custom-row input {
+            flex: 1;
+            padding: 0.35rem 0.55rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            outline: none;
+            background: var(--bg-white);
+            color: var(--text-dark);
+        }
+
+        .api-custom-row input:focus {
+            border-color: var(--primary);
+        }
+
+        .api-custom-row button {
+            padding: 0.35rem 0.75rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s ease;
+        }
+
+        .api-custom-row button:hover {
+            background: var(--primary-hover);
+        }
 
         /* GRID */
         .dashboard-grid {
@@ -458,7 +614,49 @@
         <p>Real-time Cloud Infrastructure Monitoring with Prometheus and Grafana</p>
     </div>
     <div class="header-right">
-        <button class="icon-btn" onclick="fetchMetrics()" title="Refresh Metrics"><i class="bi bi-arrow-clockwise"></i></button>
+        <!-- API Target Selector Dropdown -->
+        <div class="api-selector-container">
+            <div class="api-pill" id="apiPill" onclick="toggleApiMenu()" title="Click to select or change API Backend">
+                <i class="bi bi-hdd-network"></i>
+                <span id="apiLabel">Connecting...</span>
+                <i class="bi bi-chevron-down" style="font-size:0.65rem;"></i>
+            </div>
+            <div class="api-dropdown" id="apiDropdown">
+                <div class="api-dropdown-header">Monitoring API Backend</div>
+                <button class="api-option-btn" id="optCloud" onclick="selectApi('https://cloud-monitoring-app.vercel.app', 'Live Cloud Demo')">
+                    <i class="bi bi-cloud-check-fill" style="color:var(--primary)"></i>
+                    <div class="opt-text">
+                        <strong>Live Cloud Demo</strong>
+                        <span>cloud-monitoring-app.vercel.app</span>
+                    </div>
+                </button>
+                <button class="api-option-btn" id="optLocal" onclick="selectApi('http://127.0.0.1:8000', 'Localhost (:8000)')">
+                    <i class="bi bi-laptop-fill" style="color:var(--secondary)"></i>
+                    <div class="opt-text">
+                        <strong>Localhost (EC2 / Local)</strong>
+                        <span>http://127.0.0.1:8000</span>
+                    </div>
+                </button>
+                <button class="api-option-btn" id="optOrigin" onclick="selectApi(window.location.origin, 'Same Origin')">
+                    <i class="bi bi-globe2" style="color:var(--accent)"></i>
+                    <div class="opt-text">
+                        <strong>Current Domain</strong>
+                        <span id="optOriginSpan"></span>
+                    </div>
+                </button>
+                <div class="api-custom-row">
+                    <input type="text" id="customApiInput" placeholder="https://custom-backend.com" />
+                    <button onclick="applyCustomApi()">Set</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto Traffic Generator Button -->
+        <button class="icon-btn" id="trafficBtn" onclick="toggleAutoTraffic()" title="Simulate Live Traffic (Auto Generator)">
+            <i class="bi bi-play-fill" id="trafficIcon"></i>
+        </button>
+
+        <button class="icon-btn" onclick="fetchMetrics(); checkStatus();" title="Refresh Metrics"><i class="bi bi-arrow-clockwise"></i></button>
         <div class="status-badge">
             <div id="statusDot" class="status-dot"></div>
             <span id="statusText" class="status-text">Connecting...</span>
@@ -640,15 +838,47 @@
 
 <footer>
     Built with Terraform, Docker Compose, Prometheus, Grafana, Flask, and Bootstrap Icons
-    &mdash; <a href="https://github.com" target="_blank">View Source on GitHub</a>
+    &mdash; <a href="https://github.com/yashbaviskar15/devops-monitoring-stack" target="_blank">View Source on GitHub</a>
 </footer>
 
 <div id="toasts" class="toast-box"></div>
 
 <script>
-const API = "http://127.0.0.1:8000";
+const CLOUD_API_DEFAULT = "https://cloud-monitoring-app.vercel.app";
+const LOCAL_API_DEFAULT = "http://127.0.0.1:8000";
+
 let reqLogEl = document.getElementById("reqLog");
 let logEntries = [];
+let autoTrafficInterval = null;
+
+// Determine Initial API Target
+function getInitialApi() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramApi = urlParams.get('api');
+        if (paramApi) {
+            const clean = paramApi.trim().replace(/\/$/, '');
+            localStorage.setItem('monitoring_api_url', clean);
+            return clean;
+        }
+
+        const saved = localStorage.getItem('monitoring_api_url');
+        if (saved) return saved.trim().replace(/\/$/, '');
+
+        // If running locally
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) {
+            return LOCAL_API_DEFAULT;
+        }
+
+        // Default to live cloud demo backend for Vercel and web deployments
+        return CLOUD_API_DEFAULT;
+    } catch (e) {
+        return CLOUD_API_DEFAULT;
+    }
+}
+
+let API = getInitialApi();
 
 const stackComponents = [
     { name: "Prometheus", port: "9090", icon: "bi-database-fill", color: "var(--primary)" },
@@ -658,6 +888,98 @@ const stackComponents = [
     { name: "cAdvisor", port: "8080", icon: "bi-box-fill", color: "var(--text-muted)" },
     { name: "Flask App", port: "8000", icon: "bi-code-slash", color: "var(--secondary)" },
 ];
+
+function updateApiUi() {
+    const labelEl = document.getElementById("apiLabel");
+    const originSpan = document.getElementById("optOriginSpan");
+    if (originSpan) originSpan.textContent = window.location.origin;
+
+    if (labelEl) {
+        try {
+            const u = new URL(API);
+            let display = u.hostname;
+            if (u.port && u.port !== '80' && u.port !== '443') {
+                display += `:${u.port}`;
+            }
+            labelEl.textContent = display;
+        } catch {
+            labelEl.textContent = API.length > 20 ? API.substring(0, 18) + '...' : API;
+        }
+    }
+
+    // Update active highlight on option buttons
+    const btnCloud = document.getElementById("optCloud");
+    const btnLocal = document.getElementById("optLocal");
+    const btnOrigin = document.getElementById("optOrigin");
+
+    if (btnCloud) btnCloud.classList.toggle("active", API === CLOUD_API_DEFAULT);
+    if (btnLocal) btnLocal.classList.toggle("active", API === LOCAL_API_DEFAULT);
+    if (btnOrigin) btnOrigin.classList.toggle("active", API === window.location.origin);
+}
+
+function toggleApiMenu() {
+    const menu = document.getElementById("apiDropdown");
+    menu.classList.toggle("show");
+}
+
+function closeApiMenu() {
+    const menu = document.getElementById("apiDropdown");
+    if (menu) menu.classList.remove("show");
+}
+
+// Close API dropdown on outside click
+document.addEventListener('click', (e) => {
+    const container = document.querySelector('.api-selector-container');
+    if (container && !container.contains(e.target)) {
+        closeApiMenu();
+    }
+});
+
+function selectApi(url, label) {
+    API = url.trim().replace(/\/$/, '');
+    localStorage.setItem('monitoring_api_url', API);
+    updateApiUi();
+    closeApiMenu();
+    toast(`Connected to ${label || API}`, "bi-hdd-network-fill", "var(--primary)");
+    checkStatus();
+    fetchMetrics();
+}
+
+function applyCustomApi() {
+    const input = document.getElementById("customApiInput");
+    let val = input.value.trim();
+    if (!val) return;
+    if (!val.startsWith('http://') && !val.startsWith('https://')) {
+        val = 'https://' + val;
+    }
+    selectApi(val, val);
+    input.value = '';
+}
+
+function toggleAutoTraffic() {
+    const btn = document.getElementById("trafficBtn");
+    const icon = document.getElementById("trafficIcon");
+
+    if (autoTrafficInterval) {
+        clearInterval(autoTrafficInterval);
+        autoTrafficInterval = null;
+        btn.classList.remove("active-state");
+        icon.className = "bi bi-play-fill";
+        toast("Auto traffic simulation stopped", "bi-pause-circle", "var(--text-muted)");
+    } else {
+        btn.classList.add("active-state");
+        icon.className = "bi bi-pause-fill";
+        toast("Auto traffic simulation active (sending requests)", "bi-lightning-charge-fill", "var(--primary)");
+
+        // Send a burst immediately, then periodic requests
+        triggerReq('/');
+        const routes = ['/', '/', '/', '/slow', '/error'];
+        autoTrafficInterval = setInterval(() => {
+            const chosen = routes[Math.floor(Math.random() * routes.length)];
+            triggerReq(chosen);
+        }, 2200);
+    }
+}
 
 function renderStack() {
     const el = document.getElementById("stackList");
@@ -676,25 +998,35 @@ function toast(msg, icon, color) {
     t.className = "toast-item";
     t.innerHTML = `<i class="bi ${icon}" style="color:${color}"></i> ${msg}`;
     c.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
+    setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => t.remove(), 300);
+    }, 3200);
 }
 
 function addLog(text) {
     const now = new Date().toLocaleTimeString();
     logEntries.unshift(`[${now}] ${text}`);
-    if (logEntries.length > 30) logEntries.pop();
+    if (logEntries.length > 35) logEntries.pop();
     reqLogEl.innerHTML = logEntries.join('<br>');
 }
 
 async function checkStatus() {
     try {
-        const r = await fetch(`${API}/`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const r = await fetch(`${API}/`, { signal: controller.signal, cache: 'no-store' });
+        clearTimeout(timeoutId);
+
         if (r.ok) {
             document.getElementById("statusDot").className = "status-dot online";
             document.getElementById("statusText").textContent = "Stack Online";
             document.getElementById("aDot1").className = "alert-dot";
-        } else throw new Error();
-    } catch {
+        } else {
+            throw new Error(`HTTP ${r.status}`);
+        }
+    } catch (err) {
         document.getElementById("statusDot").className = "status-dot";
         document.getElementById("statusText").textContent = "Offline";
         document.getElementById("aDot1").className = "alert-dot firing";
@@ -704,55 +1036,65 @@ async function checkStatus() {
 async function triggerReq(ep) {
     try {
         const t0 = performance.now();
-        const r = await fetch(`${API}${ep}`);
+        const r = await fetch(`${API}${ep}`, { cache: 'no-store' });
         const dt = ((performance.now() - t0) / 1000).toFixed(3);
         const sc = r.status;
 
         if (sc >= 500) {
             toast(`${sc} Error from ${ep} (${dt}s)`, "bi-x-circle-fill", "var(--error)");
-            addLog(`ERROR ${sc} ${ep} ${dt}s`);
+            addLog(`ERROR ${sc} ${ep} (${dt}s)`);
         } else {
             toast(`${sc} OK from ${ep} (${dt}s)`, "bi-check-circle-fill", "var(--secondary)");
-            addLog(`OK ${sc} ${ep} ${dt}s`);
+            addLog(`OK ${sc} ${ep} (${dt}s)`);
         }
         fetchMetrics();
     } catch (e) {
-        toast("Connection failed", "bi-wifi-off", "var(--error)");
+        toast(`Connection failed: ${ep}`, "bi-wifi-off", "var(--error)");
         addLog(`FAIL ${ep} - ${e.message}`);
     }
 }
 
 async function fetchMetrics() {
     try {
-        const r = await fetch(`${API}/metrics`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const r = await fetch(`${API}/metrics`, { signal: controller.signal, cache: 'no-store' });
+        clearTimeout(timeoutId);
+
         if (!r.ok) return;
         const txt = await r.text();
 
-        document.getElementById("term").textContent =
-            txt.split('\n').filter(l => !l.startsWith('#') && l.trim()).slice(0, 18).join('\n');
+        const lines = txt.split('\n');
+        const metricLines = lines.filter(l => !l.startsWith('#') && l.trim());
+        document.getElementById("term").textContent = metricLines.slice(0, 22).join('\n') || '$ waiting for telemetry data...';
 
         let hc = 0, sc = 0, ec = 0, sLat = 0, cLat = 0;
 
-        txt.split('\n').forEach(l => {
+        lines.forEach(l => {
+            if (l.startsWith('#') || !l.trim()) return;
+
+            // Parse Total Requests Counter
             if (l.includes('http_requests_total')) {
-                const m = l.match(/\} (\d+)/);
-                const v = m ? parseInt(m[1]) : 0;
-                if (l.includes('endpoint="home"')) hc = v;
-                if (l.includes('endpoint="slow"')) sc = v;
-                if (l.includes('endpoint="error"')) ec = v;
+                const m = l.match(/\} ([\d.eE+-]+)/);
+                const v = m ? Math.round(parseFloat(m[1])) : 0;
+                if (l.includes('endpoint="home"') || l.includes('endpoint="/"')) hc += v;
+                if (l.includes('endpoint="slow"') || l.includes('endpoint="/slow"')) sc += v;
+                if (l.includes('endpoint="error"') || l.includes('endpoint="/error"')) ec += v;
             }
+
+            // Parse Duration Sum & Count for Average Latency
             if (l.includes('http_request_duration_seconds_sum')) {
-                const m = l.match(/\} ([\d.]+)/);
+                const m = l.match(/\} ([\d.eE+-]+)/);
                 if (m) sLat += parseFloat(m[1]);
             }
             if (l.includes('http_request_duration_seconds_count')) {
-                const m = l.match(/\} (\d+)/);
-                if (m) cLat += parseInt(m[1]);
+                const m = l.match(/\} ([\d.eE+-]+)/);
+                if (m) cLat += Math.round(parseFloat(m[1]));
             }
         });
 
         const total = hc + sc + ec;
-        const avg = cLat > 0 ? sLat / cLat : 0;
+        const avg = cLat > 0 ? (sLat / cLat) : 0;
 
         document.getElementById("mTotal").textContent = total;
         document.getElementById("mLatency").textContent = avg.toFixed(3) + "s";
@@ -774,11 +1116,13 @@ async function fetchMetrics() {
     } catch (e) { /* silent */ }
 }
 
+// Initialize UI and start background polling
 renderStack();
+updateApiUi();
 checkStatus();
 fetchMetrics();
-setInterval(checkStatus, 3000);
-setInterval(fetchMetrics, 1500);
+setInterval(checkStatus, 4000);
+setInterval(fetchMetrics, 2000);
 </script>
 
 </body>
