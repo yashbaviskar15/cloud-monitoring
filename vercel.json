@@ -6,7 +6,19 @@
       "destination": "/dashboard/index.html"
     },
     {
-      "source": "/(slow|error|metrics|health)",
+      "source": "/slow",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/error",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/metrics",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/health",
       "destination": "/api/index.py"
     },
     {

@@ -1421,8 +1421,10 @@ function getInitialApi() {
         const paramApi = urlParams.get('api');
         if (paramApi) {
             const clean = paramApi.trim().replace(/\/$/, '');
-            localStorage.setItem('monitoring_api_url', clean);
-            return clean;
+            if (!clean.includes('dev-cloud-monitoring.vercel.app')) {
+                localStorage.setItem('monitoring_api_url', clean);
+                return clean;
+            }
         }
 
         const saved = localStorage.getItem('monitoring_api_url');
@@ -1503,7 +1505,12 @@ document.addEventListener('click', (e) => {
 });
 
 function selectApi(url, label) {
-    API = url.trim().replace(/\/$/, '');
+    let target = url.trim().replace(/\/$/, '');
+    if (target.includes('dev-cloud-monitoring.vercel.app')) {
+        target = CLOUD_API_DEFAULT;
+        label = "Live Cloud Demo";
+    }
+    API = target;
     localStorage.setItem('monitoring_api_url', API);
     updateApiUi();
     closeApiMenu();
@@ -1580,10 +1587,16 @@ function addLog(text) {
 }
 
 async function checkStatus() {
+    if (API.includes('dev-cloud-monitoring.vercel.app')) {
+        console.warn("Auto-healing: switching from static dashboard to backend cloud-monitoring-app.vercel.app");
+        selectApi(CLOUD_API_DEFAULT, "Live Cloud Demo");
+        return;
+    }
+
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const r = await fetch(`${API}/`, { signal: controller.signal, cache: 'no-store' });
+        const r = await fetch(`${API}/health`, { signal: controller.signal, cache: 'no-store' });
         clearTimeout(timeoutId);
 
         if (r.ok) {
@@ -1594,9 +1607,8 @@ async function checkStatus() {
             throw new Error(`HTTP ${r.status}`);
         }
     } catch (err) {
-        // Auto-heal if the API was mistakenly pointing to the static frontend dev-cloud-monitoring.vercel.app
-        if (API.includes('dev-cloud-monitoring.vercel.app')) {
-            console.warn("Auto-healing: switching from static dashboard to backend cloud-monitoring-app.vercel.app");
+        if (API !== CLOUD_API_DEFAULT && !API.includes('localhost') && !API.includes('127.0.0.1')) {
+            console.warn("API health check failed, auto-healing to CLOUD_API_DEFAULT");
             selectApi(CLOUD_API_DEFAULT, "Live Cloud Demo");
             return;
         }
@@ -1607,11 +1619,22 @@ async function checkStatus() {
 }
 
 async function triggerReq(ep) {
+    if (API.includes('dev-cloud-monitoring.vercel.app')) {
+        API = CLOUD_API_DEFAULT;
+        localStorage.setItem('monitoring_api_url', CLOUD_API_DEFAULT);
+        updateApiUi();
+    }
+
     try {
         const t0 = performance.now();
         const r = await fetch(`${API}${ep}`, { cache: 'no-store' });
         const dt = ((performance.now() - t0) / 1000).toFixed(3);
         const sc = r.status;
+
+        if (sc === 404 && API !== CLOUD_API_DEFAULT && !API.includes('127.0.0.1') && !API.includes('localhost')) {
+            selectApi(CLOUD_API_DEFAULT, "Live Cloud Demo");
+            return triggerReq(ep);
+        }
 
         if (sc >= 500) {
             toast(`${sc} Error simulated from ${ep} (${dt}s)`, "bi-x-circle-fill", "var(--error)");
@@ -1625,6 +1648,10 @@ async function triggerReq(ep) {
         }
         fetchMetrics();
     } catch (e) {
+        if (API !== CLOUD_API_DEFAULT && !API.includes('127.0.0.1') && !API.includes('localhost')) {
+            selectApi(CLOUD_API_DEFAULT, "Live Cloud Demo");
+            return triggerReq(ep);
+        }
         toast(`Connection failed: ${ep}`, "bi-wifi-off", "var(--error)");
         addLog(`FAIL ${ep} - ${e.message}`);
     }
